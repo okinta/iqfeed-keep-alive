@@ -2,16 +2,29 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
     <StartupObject>IQFeedKeepAlive.Program</StartupObject>
     <ApplicationIcon></ApplicationIcon>
     <Description>Maintains a connection to the IQFeed client so it doesn't close</Description>
-    <Company>IQFeedKeepAlive</Company>
-    <Authors>IQFeedKeepAlive</Authors>
+    <Company>Okinta IT LLC</Company>
+    <Authors>Okinta IT LLC</Authors>
+    <Product>IQFeed Keep Alive</Product>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageId>IQFeed Keep Alive</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.7.82" />
+    <None Remove=".dockerignore" />
+    <None Remove=".gitignore" />
+    <None Remove="Dockerfile" />
+    <None Include="LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
   </ItemGroup>
 
 </Project>
