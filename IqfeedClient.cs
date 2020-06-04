@@ -60,6 +60,7 @@ namespace IqfeedKeepAlive
                 catch (SocketException e)
                 {
                     Console.Error.WriteLine(e.Message);
+                    connected = false;
                 }
 
                 Thread.Sleep(Sleep);
