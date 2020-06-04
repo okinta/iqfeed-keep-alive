@@ -46,11 +46,9 @@ namespace IqfeedKeepAlive
                     if (!socket.Connected)
                         throw new SocketException((int)SocketError.NotConnected);
 
-                    var bytes = new byte[256];
-                    socket.Receive(bytes);
-                    var message = Encoding.ASCII.GetString(bytes);
+                    SendConnect(socket);
 
-                    if (message.Contains("Not Connected"))
+                    if (GetMessage(socket).Contains("Not Connected"))
                     {
                         Console.WriteLine("Not connected");
                         socket = null;
@@ -88,13 +86,22 @@ namespace IqfeedKeepAlive
                     .First(), Port);
             }
 
-            var socket = new Socket(ipEndPoint.AddressFamily,
+            return new Socket(ipEndPoint.AddressFamily,
                 SocketType.Stream, ProtocolType.Tcp);
+        }
+
+        private void SendConnect(Socket socket)
+        {
             socket.Connect(Host, Port);
             var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
             socket.Send(bytes);
+        }
 
-            return socket;
+        private string GetMessage(Socket socket)
+        {
+            var bytes = new byte[256];
+            socket.Receive(bytes);
+            return Encoding.ASCII.GetString(bytes);
         }
     }
 }
