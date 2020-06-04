@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Linq;
+using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -13,8 +14,7 @@ namespace IqfeedKeepAlive
     {
         private const int Sleep = 3000;
         private int Port { get; }
-        private IPAddress Host { get; }
-        private IPEndPoint IpEndPoint { get; }
+        private string Host { get; }
         private Socket Socket { get; set; }
 
         /// <summary>
@@ -24,8 +24,7 @@ namespace IqfeedKeepAlive
         /// <param name="port">The IQFeed port to connect to.</param>
         public IqfeedClient(string host, int port)
         {
-            Host = IPAddress.Parse(host);
-            IpEndPoint = new IPEndPoint(Host, Port);
+            Host = host;
             Port = port;
         }
 
@@ -72,7 +71,21 @@ namespace IqfeedKeepAlive
         /// </summary>
         private void Connect()
         {
-            Socket = new Socket(IpEndPoint.AddressFamily,
+            IPEndPoint ipEndPoint;
+            try
+            {
+                ipEndPoint = new IPEndPoint(IPAddress.Parse(Host), Port);
+            }
+
+            // If we are given a domain, perform a DNS lookup to find the host
+            catch (FormatException)
+            {
+                ipEndPoint = new IPEndPoint(Dns.GetHostAddresses(Host)
+                    .OrderBy(x => Guid.NewGuid())
+                    .First(), Port);
+            }
+
+            Socket = new Socket(ipEndPoint.AddressFamily,
                 SocketType.Stream, ProtocolType.Tcp);
             Socket.Connect(Host, Port);
             var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
