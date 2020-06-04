@@ -2,8 +2,8 @@
 
 Keeps IQFeed running by opening and maintaining a continuous connection.
 
-Simply run the program then start IQFeed. Run `IQFeedKeepAlive.exe --help` for
-more options.
+Simply run the program then start IQFeed. Run `iqfeed-keep-alive.exe --help`
+for more options.
 
 ## Development
 
@@ -24,4 +24,4 @@ Replace `[IP]` with the network address used by docker (can be found by running
 
 Once the port forwarding is in place, run:
 
-    docker run okinta/iqfeed-keep-alive IQFeedKeepAlive -h $(docker run alpine getent hosts host.docker.internal | cut -d' ' -f1)
+    docker run okinta/iqfeed-keep-alive iqfeed-keep-alive -h $(docker run alpine getent hosts host.docker.internal | cut -d' ' -f1)
