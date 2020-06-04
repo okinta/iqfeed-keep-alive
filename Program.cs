@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace IQFeedKeepAlive
+namespace IqfeedKeepAlive
 {
     /// <summary>
     /// Runs the program.
@@ -30,7 +30,7 @@ namespace IQFeedKeepAlive
 
         private static void Run(Options opts)
         {
-            var client = new IQFeedClient(opts.Host, opts.Port);
+            var client = new IqfeedClient(opts.Host, opts.Port);
             client.Run();
         }
     }

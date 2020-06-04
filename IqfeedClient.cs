@@ -4,16 +4,16 @@ using System.Text;
 using System.Threading;
 using System;
 
-namespace IQFeedKeepAlive
+namespace IqfeedKeepAlive
 {
     /// <summary>
     /// Defines ability to maintain a connection to IQFeed.
     /// </summary>
-    internal class IQFeedClient
+    internal class IqfeedClient
     {
         private int Port { get; }
         private IPAddress Host { get; }
-        private IPEndPoint IPEndPoint { get; }
+        private IPEndPoint IpEndPoint { get; }
         private Socket Socket { get; set; }
 
         /// <summary>
@@ -21,10 +21,10 @@ namespace IQFeedKeepAlive
         /// </summary>
         /// <param name="host">The IQFeed host to connect to.</param>
         /// <param name="port">The IQFeed port to connect to.</param>
-        public IQFeedClient(string host, int port)
+        public IqfeedClient(string host, int port)
         {
             Host = IPAddress.Parse(host);
-            IPEndPoint = new IPEndPoint(Host, Port);
+            IpEndPoint = new IPEndPoint(Host, Port);
             Port = port;
         }
 
@@ -50,7 +50,7 @@ namespace IQFeedKeepAlive
                 {
                     try
                     {
-                        Socket = new Socket(IPEndPoint.AddressFamily,
+                        Socket = new Socket(IpEndPoint.AddressFamily,
                             SocketType.Stream, ProtocolType.Tcp);
                         Socket.Connect(Host, Port);
                         var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");

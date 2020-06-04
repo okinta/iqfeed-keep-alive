@@ -3,14 +3,17 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
-    <StartupObject>IQFeedKeepAlive.Program</StartupObject>
+    <StartupObject>IqfeedKeepAlive.Program</StartupObject>
     <ApplicationIcon></ApplicationIcon>
     <Description>Maintains a connection to the IQFeed client so it doesn't close</Description>
     <Company>Okinta IT LLC</Company>
     <Authors>Okinta IT LLC</Authors>
     <Product>IQFeed Keep Alive</Product>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageId>IQFeed Keep Alive</PackageId>
+    <PackageId>iqfeed-keep-alive</PackageId>
+    <Version>1.1.0</Version>
+    <NeutralLanguage>en</NeutralLanguage>
+    <RepositoryUrl>https://github.com/okinta/iqfeed-keep-alive</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
