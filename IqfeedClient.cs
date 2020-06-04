@@ -12,7 +12,7 @@ namespace IqfeedKeepAlive
     /// </summary>
     internal class IqfeedClient
     {
-        private const int Sleep = 3000;
+        private const int Sleep = 30000;
         private int Port { get; }
         private string Host { get; }
         private Socket Socket { get; set; }
