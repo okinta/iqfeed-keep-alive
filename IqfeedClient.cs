@@ -11,6 +11,7 @@ namespace IqfeedKeepAlive
     /// </summary>
     internal class IqfeedClient
     {
+        private const int Sleep = 3000;
         private int Port { get; }
         private IPAddress Host { get; }
         private IPEndPoint IpEndPoint { get; }
@@ -33,36 +34,49 @@ namespace IqfeedKeepAlive
         /// </summary>
         public void Run()
         {
+            var connected = false;
             while (true)
             {
                 try
                 {
+                    if (!connected)
+                    {
+                        Connect();
+                        Console.WriteLine("Connected");
+                        connected = true;
+                    }
+
                     var bytes = new byte[256];
                     Socket.Receive(bytes);
                     var message = Encoding.ASCII.GetString(bytes);
 
                     if (message.Contains("Not Connected"))
                     {
-                        throw new Exception();
+                        Console.WriteLine("Not connected");
+                        connected = false;
                     }
+                    else
+                        Console.WriteLine("Active");
                 }
-                catch (Exception)
+                catch (SocketException e)
                 {
-                    try
-                    {
-                        Socket = new Socket(IpEndPoint.AddressFamily,
-                            SocketType.Stream, ProtocolType.Tcp);
-                        Socket.Connect(Host, Port);
-                        var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
-                        Socket.Send(bytes);
-                    }
-                    catch (Exception)
-                    {
-                    }
+                    Console.Error.WriteLine(e.Message);
                 }
 
-                Thread.Sleep(3000);
+                Thread.Sleep(Sleep);
             }
+        }
+
+        /// <summary>
+        /// Connects to IQFeed.
+        /// </summary>
+        private void Connect()
+        {
+            Socket = new Socket(IpEndPoint.AddressFamily,
+                SocketType.Stream, ProtocolType.Tcp);
+            Socket.Connect(Host, Port);
+            var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
+            Socket.Send(bytes);
         }
     }
 }
