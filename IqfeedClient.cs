@@ -43,6 +43,9 @@ namespace IqfeedKeepAlive
                         Console.WriteLine("Connected");
                     }
 
+                    if (!socket.Connected)
+                        throw new SocketException((int)SocketError.NotConnected);
+
                     var bytes = new byte[256];
                     socket.Receive(bytes);
                     var message = Encoding.ASCII.GetString(bytes);
