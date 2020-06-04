@@ -15,7 +15,6 @@ namespace IqfeedKeepAlive
         private const int Sleep = 30000;
         private int Port { get; }
         private string Host { get; }
-        private Socket Socket { get; set; }
 
         /// <summary>
         /// Instantiates the instance.
@@ -33,26 +32,25 @@ namespace IqfeedKeepAlive
         /// </summary>
         public void Run()
         {
-            var connected = false;
+            Socket socket = null;
             while (true)
             {
                 try
                 {
-                    if (!connected)
+                    if (socket is null)
                     {
-                        Connect();
+                        socket = Connect();
                         Console.WriteLine("Connected");
-                        connected = true;
                     }
 
                     var bytes = new byte[256];
-                    Socket.Receive(bytes);
+                    socket.Receive(bytes);
                     var message = Encoding.ASCII.GetString(bytes);
 
                     if (message.Contains("Not Connected"))
                     {
                         Console.WriteLine("Not connected");
-                        connected = false;
+                        socket = null;
                     }
                     else
                         Console.WriteLine("Active");
@@ -60,7 +58,7 @@ namespace IqfeedKeepAlive
                 catch (SocketException e)
                 {
                     Console.Error.WriteLine(e.Message);
-                    connected = false;
+                    socket = null;
                 }
 
                 Thread.Sleep(Sleep);
@@ -70,7 +68,8 @@ namespace IqfeedKeepAlive
         /// <summary>
         /// Connects to IQFeed.
         /// </summary>
-        private void Connect()
+        /// <returns>The connected Socket instance.</returns>
+        private Socket Connect()
         {
             IPEndPoint ipEndPoint;
             try
@@ -86,11 +85,13 @@ namespace IqfeedKeepAlive
                     .First(), Port);
             }
 
-            Socket = new Socket(ipEndPoint.AddressFamily,
+            var socket = new Socket(ipEndPoint.AddressFamily,
                 SocketType.Stream, ProtocolType.Tcp);
-            Socket.Connect(Host, Port);
+            socket.Connect(Host, Port);
             var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
-            Socket.Send(bytes);
+            socket.Send(bytes);
+
+            return socket;
         }
     }
 }
