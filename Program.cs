@@ -40,6 +40,7 @@ namespace IqfeedKeepAlive
         {
             using var _ = new IqfeedClient(opts.Host, opts.Port);
             await _exitEvent.WaitAsync();
+            await ConsoleX.WriteLineAsync("Goodbye");
         }
 
         /// <summary>
