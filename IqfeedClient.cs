@@ -16,7 +16,7 @@ namespace IqfeedKeepAlive
     internal class IqfeedClient : IDisposable
     {
         private CancellationTokenSource Token { get; }
-        private const int Sleep = 30000;
+        private const int Sleep = 15000;
         private Task Task { get; }
 
         /// <summary>
