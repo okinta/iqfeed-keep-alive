@@ -72,18 +72,12 @@ namespace IqfeedKeepAlive
                     var _ = await SendConnect(socket, token);
 
                     var message = await GetMessage(socket, token);
-                    if (message.Contains("Not Connected"))
-                    {
-                        await ConsoleX.WriteLineAsync("Not connected", token);
-                        socket = null;
-                    }
-                    else
-                        await ConsoleX.WriteLineAsync("Active", token);
-
+                    await ConsoleX.WriteLineAsync(message, token);
                 }
                 catch (SocketException e)
                 {
                     await ConsoleX.WriteErrorLineAsync(e.Message, token);
+                    await socket.CloseAsync(token);
                     socket = null;
                 }
 

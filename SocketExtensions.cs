@@ -64,5 +64,28 @@ namespace IqfeedKeepAlive
                 throw new SocketException((int)SocketError.TimedOut);
             }
         }
+
+        /// <summary>
+        /// Asynchronously closes the Socket connection and releases all associated
+        /// resources.
+        /// </summary>
+        /// <param name="socket">The Socket to close.</param>
+        /// <param name="token">The token to check for cancellation.</param>
+        /// <exception cref="OperationCanceledException">If the task is cancelled before
+        /// completion.</exception>
+        public static async Task CloseAsync(
+            this Socket socket, CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+
+            var wait = new AsyncManualResetEvent();
+            var args = new SocketAsyncEventArgs();
+            args.Completed += (sender, eventArgs) => wait.Set();
+            if (socket.DisconnectAsync(args))
+                await wait.WaitAsync(token);
+
+            token.ThrowIfCancellationRequested();
+            socket.Close();
+        }
     }
 }
