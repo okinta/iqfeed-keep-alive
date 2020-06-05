@@ -61,11 +61,7 @@ namespace IqfeedKeepAlive
             {
                 try
                 {
-                    if (socket is null)
-                    {
-                        socket = Connect(host, port);
-                        await ConsoleX.WriteLineAsync("Connected", token);
-                    }
+                    socket ??= Connect(host, port);
 
                     if (!socket.Connected)
                         throw new SocketException((int)SocketError.NotConnected);
