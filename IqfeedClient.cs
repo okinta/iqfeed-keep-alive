@@ -16,6 +16,7 @@ namespace IqfeedKeepAlive
     internal class IqfeedClient : IDisposable
     {
         private CancellationTokenSource Token { get; }
+        private const int ConnectionTimeout = 5000;
         private const int Sleep = 15000;
         private Task Task { get; }
 
@@ -112,7 +113,7 @@ namespace IqfeedKeepAlive
 
             var socket = new Socket(
                 ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            await socket.ConnectAsync(host, port, token);
+            await socket.ConnectAsync(host, port, ConnectionTimeout, token);
             return socket;
         }
 
