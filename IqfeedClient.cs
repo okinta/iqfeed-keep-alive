@@ -3,7 +3,6 @@ using DnsClient;
 using System.Linq;
 using System.Net.Sockets;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System;
@@ -69,7 +68,7 @@ namespace IqfeedKeepAlive
                     if (!socket.Connected)
                         throw new SocketException((int)SocketError.NotConnected);
 
-                    await GetMessage(socket, token);
+                    var _ = await socket.GetMessage(token);
                     await ConsoleX.WriteLineAsync("Active", token);
                 }
                 catch (SocketException e)
@@ -110,10 +109,7 @@ namespace IqfeedKeepAlive
             var socket = new Socket(
                 ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(host, port, ConnectionTimeout, token);
-
-            var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
-            await socket.SendAsync(bytes, SocketFlags.None, token);
-
+            await socket.SendAsync("S,CONNECT\r\n", token);
             return socket;
         }
 
@@ -137,14 +133,6 @@ namespace IqfeedKeepAlive
                 .First();
 
             return record.Address;
-        }
-
-        private static async Task<string> GetMessage(
-            Socket socket, CancellationToken token)
-        {
-            var bytes = new byte[256];
-            await socket.ReceiveAsync(bytes, SocketFlags.None, token);
-            return Encoding.ASCII.GetString(bytes);
         }
     }
 }

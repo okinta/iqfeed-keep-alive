@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Threading;
 using System;
+using System.Text;
 
 namespace IqfeedKeepAlive
 {
@@ -86,6 +87,36 @@ namespace IqfeedKeepAlive
 
             token.ThrowIfCancellationRequested();
             socket.Close();
+        }
+
+        /// <summary>
+        /// Sends a message via the socket.
+        /// </summary>
+        /// <param name="socket">The Socket instance to send a message with.</param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="token">The token to check for cancellation.</param>
+        /// <returns>An asynchronous task that completes with number of bytes sent to
+        /// the socket if the operation was successful. Otherwise, the task will
+        /// complete with an invalid socket error.</returns>
+        public static ValueTask<int> SendAsync(
+            this Socket socket, string message, CancellationToken token = default)
+        {
+            var bytes = Encoding.ASCII.GetBytes(message);
+            return socket.SendAsync(bytes, SocketFlags.None, token);
+        }
+
+        /// <summary>
+        /// Gets a message from the socket.
+        /// </summary>
+        /// <param name="socket">The Socket instance to retrieve a message from.</param>
+        /// <param name="token">The token to check for cancellation.</param>
+        /// <returns>The retrieved message from the socket.</returns>
+        public static async Task<string> GetMessage(
+            this Socket socket, CancellationToken token)
+        {
+            var bytes = new byte[256];
+            await socket.ReceiveAsync(bytes, SocketFlags.None, token);
+            return Encoding.ASCII.GetString(bytes);
         }
     }
 }
