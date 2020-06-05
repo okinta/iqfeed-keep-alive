@@ -1,4 +1,8 @@
 ﻿using CommandLine;
+using Nito.AsyncEx;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
 
 namespace IqfeedKeepAlive
 {
@@ -7,16 +11,16 @@ namespace IqfeedKeepAlive
     /// </summary>
     internal class Program
     {
-        /// <summary>
-        /// Command line options.
-        /// </summary>
-        public class Options
-        {
-            [Option('h', "host", Default = "127.0.0.1")]
-            public string Host { get; set; }
+        private readonly AsyncManualResetEvent _exitEvent = new AsyncManualResetEvent();
+        private readonly CancellationTokenSource _cancelToken =
+            new CancellationTokenSource();
 
-            [Option('x', "port", Default = 9300)]
-            public int Port { get; set; }
+        /// <summary>
+        /// Instantiates the instance. Creates event handler for ctrl+c.
+        /// </summary>
+        public Program()
+        {
+            Console.CancelKeyPress += OnCancelKeyPress;
         }
 
         /// <summary>
@@ -25,13 +29,32 @@ namespace IqfeedKeepAlive
         /// <param name="args">The arguments passed via the command line.</param>
         public static void Main(string[] args)
         {
-            Parser.Default.ParseArguments<Options>(args).WithParsed(Run);
+            var program = new Program();
+            Parser.Default.ParseArguments<Options>(args).WithParsedAsync(program.Run);
         }
 
-        private static void Run(Options opts)
+        /// <summary>
+        /// Maintains a connection to IQFeed continuously in the background. Waits until
+        /// a signal is received to exit the program.
+        /// </summary>
+        /// <param name="opts">The parsed command line options.</param>
+        private async Task Run(Options opts)
         {
-            var client = new IqfeedClient(opts.Host, opts.Port);
-            client.Run();
+            using var _ = new IqfeedClient(opts.Host, opts.Port);
+            await _exitEvent.WaitAsync(_cancelToken.Token);
+        }
+
+        /// <summary>
+        /// Called when ctrl+c is pressed. Signal that we should exit the program.
+        /// </summary>
+        /// <param name="sender">The object that sent the event.</param>
+        /// <param name="eventArgs">The event arguments.</param>
+        private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs eventArgs)
+        {
+            Console.CancelKeyPress -= OnCancelKeyPress;
+            eventArgs.Cancel = true;
+            _exitEvent.Set();
+            _cancelToken.Cancel();
         }
     }
 }
