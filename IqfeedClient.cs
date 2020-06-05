@@ -61,12 +61,12 @@ namespace IqfeedKeepAlive
             {
                 try
                 {
-                    socket ??= Connect(host, port);
+                    socket ??= await Connect(host, port);
 
                     if (!socket.Connected)
                         throw new SocketException((int)SocketError.NotConnected);
 
-                    var _ = await SendConnect(socket, host, port, token);
+                    var _ = await SendConnect(socket, token);
 
                     var message = await GetMessage(socket, token);
                     if (message.Contains("Not Connected"))
@@ -92,7 +92,7 @@ namespace IqfeedKeepAlive
         /// Connects to IQFeed.
         /// </summary>
         /// <returns>The connected Socket instance.</returns>
-        private static Socket Connect(string host, int port)
+        private static async Task<Socket> Connect(string host, int port)
         {
             IPEndPoint ipEndPoint;
             try
@@ -103,19 +103,21 @@ namespace IqfeedKeepAlive
             // If we are given a domain, perform a DNS lookup to find the host
             catch (FormatException)
             {
-                ipEndPoint = new IPEndPoint(Dns.GetHostAddresses(host)
+                ipEndPoint = new IPEndPoint(
+                    (await Dns.GetHostAddressesAsync(host))
                     .OrderBy(x => Guid.NewGuid())
                     .First(), port);
             }
 
-            return new Socket(ipEndPoint.AddressFamily,
-                SocketType.Stream, ProtocolType.Tcp);
+            var socket = new Socket(
+                ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            await socket.ConnectAsync(host, port);
+            return socket;
         }
 
-        private static async Task<ValueTask<int>> SendConnect(
-            Socket socket, string host, int port, CancellationToken token)
+        private static ValueTask<int> SendConnect(
+            Socket socket, CancellationToken token)
         {
-            await socket.ConnectAsync(host, port);
             var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
             return socket.SendAsync(bytes, SocketFlags.None, token);
         }
