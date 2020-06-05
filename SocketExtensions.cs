@@ -1,9 +1,9 @@
 ﻿using Nito.AsyncEx;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System;
-using System.Text;
 
 namespace IqfeedKeepAlive
 {
@@ -36,34 +36,25 @@ namespace IqfeedKeepAlive
         /// <summary>
         /// Establishes a connection to a remote host. The host is specified by a host name
         /// and a port number. Allows the operation to be cancelled via a
-        /// CancellationToken. Times out after <paramref name="millisecondsDelay"/>.
+        /// CancellationToken. Times out after <paramref name="millisecondsTimeout"/>.
         /// </summary>
         /// <param name="socket">The socket to perform the connect operation on.</param>
         /// <param name="host">The name of the remote host.</param>
         /// <param name="port">The port number of the remote host.</param>
-        /// <param name="millisecondsDelay">The number of milliseconds to wait before
+        /// <param name="millisecondsTimeout">The number of milliseconds to wait before
         /// timing out the request.</param>
         /// <param name="token">The token to check for cancellation.</param>
         /// <exception cref="OperationCanceledException">If the task is cancelled before
         /// completion.</exception>
         /// <exception cref="SocketException">If the connection times out after
-        /// <paramref name="millisecondsDelay"/>.</exception>
-        public static async Task ConnectAsync(
+        /// <paramref name="millisecondsTimeout"/>.</exception>
+        public static Task ConnectAsync(
             this Socket socket, string host, int port,
-            int millisecondsDelay, CancellationToken token = default)
+            int millisecondsTimeout, CancellationToken token = default)
         {
-            token.ThrowIfCancellationRequested();
-            var timeoutToken = CancellationTokenSource.CreateLinkedTokenSource(token);
-            timeoutToken.CancelAfter(millisecondsDelay);
-
-            try
-            {
-                await socket.ConnectAsync(host, port, timeoutToken.Token);
-            }
-            catch (OperationCanceledException) when (timeoutToken.IsCancellationRequested)
-            {
-                throw new SocketException((int)SocketError.TimedOut);
-            }
+            return TimeoutAsync(
+                t => socket.ConnectAsync(host, port, t),
+                millisecondsTimeout, token);
         }
 
         /// <summary>
@@ -90,7 +81,8 @@ namespace IqfeedKeepAlive
         }
 
         /// <summary>
-        /// Sends a message via the socket.
+        /// Sends a message via the socket. Allows the operation to be cancelled via a
+        /// CancellationToken.
         /// </summary>
         /// <param name="socket">The Socket instance to send a message with.</param>
         /// <param name="message">The message to send.</param>
@@ -106,7 +98,29 @@ namespace IqfeedKeepAlive
         }
 
         /// <summary>
-        /// Gets a message from the socket.
+        /// Sends a message via the socket. Allows the operation to be cancelled via a
+        /// CancellationToken. Times out after <paramref name="millisecondsTimeout"/>.
+        /// </summary>
+        /// <param name="socket">The Socket instance to send a message with.</param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="millisecondsTimeout">The number of milliseconds to wait before
+        /// timing out the request.</param>
+        /// <param name="token">The token to check for cancellation.</param>
+        /// <returns>An asynchronous task that completes with number of bytes sent to
+        /// the socket if the operation was successful. Otherwise, the task will
+        /// complete with an invalid socket error.</returns>
+        public static ValueTask<int> SendAsync(
+            this Socket socket, string message, int millisecondsTimeout,
+            CancellationToken token = default)
+        {
+            return TimeoutAsync(
+                t => socket.SendAsync(message, t),
+                millisecondsTimeout, token);
+        }
+
+        /// <summary>
+        /// Gets a message from the socket. Allows the operation to be cancelled via a
+        /// CancellationToken.
         /// </summary>
         /// <param name="socket">The Socket instance to retrieve a message from.</param>
         /// <param name="token">The token to check for cancellation.</param>
@@ -117,6 +131,49 @@ namespace IqfeedKeepAlive
             var bytes = new byte[256];
             await socket.ReceiveAsync(bytes, SocketFlags.None, token);
             return Encoding.ASCII.GetString(bytes);
+        }
+
+        /// <summary>
+        /// Gets a message from the socket. Allows the operation to be cancelled via a
+        /// CancellationToken. Times out after <paramref name="millisecondsTimeout"/>.
+        /// </summary>
+        /// <param name="socket">The Socket instance to retrieve a message from.</param>
+        /// <param name="millisecondsTimeout">The number of milliseconds to wait before
+        /// timing out the request.</param>
+        /// <param name="token">The token to check for cancellation.</param>
+        /// <returns>The retrieved message from the socket.</returns>
+        public static Task<string> GetMessage(
+            this Socket socket, int millisecondsTimeout, CancellationToken token)
+        {
+            return TimeoutAsync(socket.GetMessage, millisecondsTimeout, token);
+        }
+
+        /// <summary>
+        /// Runs a function asyncronously, and times it out after
+        /// <paramref name="millisecondsTimeout"/>.
+        /// </summary>
+        /// <typeparam name="T">The return type.</typeparam>
+        /// <param name="action">The function to call.</param>
+        /// <param name="millisecondsTimeout">The number of milliseconds to wait before
+        /// timing out the function.</param>
+        /// <param name="token">The token to check for cancellation.</param>
+        /// <returns>The result from the function.</returns>
+        private static T TimeoutAsync<T>(
+            Func<CancellationToken, T> action, int millisecondsTimeout,
+            CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+            var timeoutToken = CancellationTokenSource.CreateLinkedTokenSource(token);
+            timeoutToken.CancelAfter(millisecondsTimeout);
+
+            try
+            {
+                return action(timeoutToken.Token);
+            }
+            catch (OperationCanceledException) when (timeoutToken.IsCancellationRequested)
+            {
+                throw new SocketException((int)SocketError.TimedOut);
+            }
         }
     }
 }

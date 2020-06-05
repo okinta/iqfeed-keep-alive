@@ -68,7 +68,7 @@ namespace IqfeedKeepAlive
                     if (!socket.Connected)
                         throw new SocketException((int)SocketError.NotConnected);
 
-                    var _ = await socket.GetMessage(token);
+                    var _ = await socket.GetMessage(ConnectionTimeout, token);
                     await ConsoleX.WriteLineAsync("Active", token);
                 }
                 catch (SocketException e)
@@ -109,7 +109,7 @@ namespace IqfeedKeepAlive
             var socket = new Socket(
                 ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(host, port, ConnectionTimeout, token);
-            await socket.SendAsync("S,CONNECT\r\n", token);
+            await socket.SendAsync("S,CONNECT\r\n", ConnectionTimeout, token);
             return socket;
         }
 
