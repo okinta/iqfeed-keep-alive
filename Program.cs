@@ -1,7 +1,6 @@
 ﻿using CommandLine;
 using Nito.AsyncEx;
 using System.Threading.Tasks;
-using System.Threading;
 using System;
 
 namespace IqfeedKeepAlive
@@ -12,8 +11,6 @@ namespace IqfeedKeepAlive
     internal class Program
     {
         private readonly AsyncManualResetEvent _exitEvent = new AsyncManualResetEvent();
-        private readonly CancellationTokenSource _cancelToken =
-            new CancellationTokenSource();
 
         /// <summary>
         /// Instantiates the instance. Creates event handler for ctrl+c.
@@ -27,10 +24,11 @@ namespace IqfeedKeepAlive
         /// Entrypoint to start the program.
         /// </summary>
         /// <param name="args">The arguments passed via the command line.</param>
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var program = new Program();
-            Parser.Default.ParseArguments<Options>(args).WithParsedAsync(program.Run);
+            await Parser.Default.ParseArguments<Options>(args)
+                .WithParsedAsync(program.Run);
         }
 
         /// <summary>
@@ -41,7 +39,7 @@ namespace IqfeedKeepAlive
         private async Task Run(Options opts)
         {
             using var _ = new IqfeedClient(opts.Host, opts.Port);
-            await _exitEvent.WaitAsync(_cancelToken.Token);
+            await _exitEvent.WaitAsync();
         }
 
         /// <summary>
@@ -54,7 +52,6 @@ namespace IqfeedKeepAlive
             Console.CancelKeyPress -= OnCancelKeyPress;
             eventArgs.Cancel = true;
             _exitEvent.Set();
-            _cancelToken.Cancel();
         }
     }
 }
