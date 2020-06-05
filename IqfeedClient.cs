@@ -69,8 +69,8 @@ namespace IqfeedKeepAlive
                     if (!socket.Connected)
                         throw new SocketException((int)SocketError.NotConnected);
 
-                    var message = await GetMessage(socket, token);
-                    await ConsoleX.WriteLineAsync(message, token);
+                    await GetMessage(socket, token);
+                    await ConsoleX.WriteLineAsync("Active", token);
                 }
                 catch (SocketException e)
                 {
