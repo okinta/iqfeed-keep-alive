@@ -75,8 +75,12 @@ namespace IqfeedKeepAlive
                 catch (SocketException e)
                 {
                     await ConsoleX.WriteErrorLineAsync(e.Message, token);
-                    await socket.CloseAsync(token);
-                    socket = null;
+
+                    if (socket != null)
+                    {
+                        await socket.CloseAsync(token);
+                        socket = null;
+                    }
                 }
 
                 await Task.Delay(Sleep, token);
