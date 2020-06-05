@@ -69,8 +69,6 @@ namespace IqfeedKeepAlive
                     if (!socket.Connected)
                         throw new SocketException((int)SocketError.NotConnected);
 
-                    var _ = await SendConnect(socket, token);
-
                     var message = await GetMessage(socket, token);
                     await ConsoleX.WriteLineAsync(message, token);
                 }
@@ -108,6 +106,10 @@ namespace IqfeedKeepAlive
             var socket = new Socket(
                 ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(host, port, ConnectionTimeout, token);
+
+            var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
+            await socket.SendAsync(bytes, SocketFlags.None, token);
+
             return socket;
         }
 
@@ -131,13 +133,6 @@ namespace IqfeedKeepAlive
                 .First();
 
             return record.Address;
-        }
-
-        private static ValueTask<int> SendConnect(
-            Socket socket, CancellationToken token)
-        {
-            var bytes = Encoding.ASCII.GetBytes("S,CONNECT\r\n");
-            return socket.SendAsync(bytes, SocketFlags.None, token);
         }
 
         private static async Task<string> GetMessage(
