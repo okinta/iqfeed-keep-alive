@@ -112,7 +112,7 @@ namespace IqfeedKeepAlive
 
             var socket = new Socket(
                 ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            await socket.ConnectAsync(host, port);
+            await socket.ConnectAsync(host, port, token);
             return socket;
         }
 
