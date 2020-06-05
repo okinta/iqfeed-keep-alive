@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using DnsClient.Protocol;
+using DnsClient;
+using System.Linq;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
@@ -61,7 +63,7 @@ namespace IqfeedKeepAlive
             {
                 try
                 {
-                    socket ??= await Connect(host, port);
+                    socket ??= await Connect(host, port, token);
 
                     if (!socket.Connected)
                         throw new SocketException((int)SocketError.NotConnected);
@@ -92,7 +94,8 @@ namespace IqfeedKeepAlive
         /// Connects to IQFeed.
         /// </summary>
         /// <returns>The connected Socket instance.</returns>
-        private static async Task<Socket> Connect(string host, int port)
+        private static async Task<Socket> Connect(
+            string host, int port, CancellationToken token)
         {
             IPEndPoint ipEndPoint;
             try
@@ -103,16 +106,36 @@ namespace IqfeedKeepAlive
             // If we are given a domain, perform a DNS lookup to find the host
             catch (FormatException)
             {
-                ipEndPoint = new IPEndPoint(
-                    (await Dns.GetHostAddressesAsync(host))
-                    .OrderBy(x => Guid.NewGuid())
-                    .First(), port);
+                var ip = await GetIpAddress(host, token);
+                ipEndPoint = new IPEndPoint(ip, port);
             }
 
             var socket = new Socket(
                 ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(host, port);
             return socket;
+        }
+
+        /// <summary>
+        /// Performs a DNS query to resolve the given host to an IPAddress.
+        /// </summary>
+        /// <param name="host">The host to resolve.</param>
+        /// <param name="token">The token to check for cancellation requests.</param>
+        /// <returns>The resolved IPAddress of the <paramref name="host"/>.</returns>
+        private static async Task<IPAddress> GetIpAddress(
+            string host, CancellationToken token)
+        {
+            var lookupClient = new LookupClient();
+            var result = await lookupClient.QueryAsync(
+                new DnsQuestion(host, QueryType.A), token);
+
+            // Pick a random record
+            var record = result.AllRecords
+                .OfType<AddressRecord>()
+                .OrderBy(x => Guid.NewGuid())
+                .First();
+
+            return record.Address;
         }
 
         private static ValueTask<int> SendConnect(
