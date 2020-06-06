@@ -1,7 +1,9 @@
+using FluentAssertions;
 using IqfeedKeepAlive;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading.Tasks;
+using System;
 using Xunit;
 
 namespace tests
@@ -19,6 +21,18 @@ namespace tests
                 IPAddress.Parse(Host).AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(Host, Port, 5000);
             await socket.CloseAsync();
+        }
+
+        [Fact]
+        public async Task TestTimeoutConnect()
+        {
+            var socket = new MySocket();
+            Func<Task> action =
+                async () => await socket.ConnectAsync(Host, Port, 1000);
+            (await action.Should()
+                .ThrowAsync<SocketException>())
+                .Where(
+                e => e.SocketErrorCode == SocketError.TimedOut);
         }
     }
 }
