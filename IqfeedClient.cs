@@ -72,7 +72,7 @@ namespace IqfeedKeepAlive
                     if (string.IsNullOrEmpty(message))
                         throw new SocketException((int)SocketError.NotConnected);
 
-                    await ConsoleX.WriteLineAsync("Active", token);
+                    await ConsoleX.WriteLineAsync(message, token);
                 }
                 catch (SocketException e)
                 {
