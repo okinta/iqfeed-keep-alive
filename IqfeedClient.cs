@@ -14,9 +14,10 @@ namespace IqfeedKeepAlive
     /// </summary>
     internal class IqfeedClient : IDisposable
     {
-        private CancellationTokenSource Token { get; }
+        private CancellationTokenSource Token { get; } = new CancellationTokenSource();
         private const int ConnectionTimeout = 5000;
         private const int Sleep = 15000;
+        private string PagerTreeIntId { get; }
         private Task Task { get; }
 
         /// <summary>
@@ -24,7 +25,9 @@ namespace IqfeedKeepAlive
         /// </summary>
         /// <param name="host">The IQFeed host to connect to.</param>
         /// <param name="port">The IQFeed port to connect to.</param>
-        public IqfeedClient(string host, int port)
+        /// <param name="pagerTreeIntId">The optional ID of the PagerTree integration to
+        /// notify when IQFeed is unavailable.</param>
+        public IqfeedClient(string host, int port, string pagerTreeIntId = null)
         {
             if (string.IsNullOrEmpty(host))
                 throw new ArgumentNullException(
@@ -34,7 +37,7 @@ namespace IqfeedKeepAlive
                 throw new ArgumentOutOfRangeException(
                     nameof(port), "port must be larger than 1");
 
-            Token = new CancellationTokenSource();
+            PagerTreeIntId = pagerTreeIntId;
 
             // Start maintaining the connection to IQFeed in a background thread
             Task = Task.Run(() => Run(host, port, Token.Token));
@@ -56,9 +59,10 @@ namespace IqfeedKeepAlive
             }
         }
 
-        private static async Task Run(string host, int port, CancellationToken token)
+        private async Task Run(string host, int port, CancellationToken token)
         {
             Socket socket = null;
+            Incident incident = null;
             while (!token.IsCancellationRequested)
             {
                 try
@@ -69,15 +73,22 @@ namespace IqfeedKeepAlive
                         throw new SocketException((int)SocketError.NotConnected);
 
                     var _ = await socket.GetMessage(ConnectionTimeout, token);
+                    if (incident != null) await incident.Resolve(token);
                     await ConsoleX.WriteLineAsync("Active", token);
                     while (!token.IsCancellationRequested)
                     {
-                        _ = await socket.GetMessage(ConnectionTimeout, token);
+                        await socket.GetMessage(ConnectionTimeout, token);
                     }
                 }
                 catch (SocketException e)
                 {
                     await ConsoleX.WriteErrorLineAsync(e.Message, token);
+                    if (incident is null && !string.IsNullOrEmpty(PagerTreeIntId))
+                    {
+                        incident = new Incident(
+                            PagerTreeIntId, "IQFeed is down", e.Message);
+                        await incident.Notify(token);
+                    }
 
                     if (socket != null)
                     {
