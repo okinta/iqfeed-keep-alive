@@ -25,3 +25,16 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: okinta/iqfeed-keep-alive
           tags: latest
+
+  build-stack:
+    needs:
+      - publish
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish stack
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: okinta/stack-iqfeed-keep-alive
+          event-type: iqfeed-keep-alive-published
