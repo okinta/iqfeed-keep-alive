@@ -33,6 +33,7 @@ namespace tests
                 .ThrowAsync<SocketException>())
                 .Where(
                 e => e.SocketErrorCode == SocketError.TimedOut);
+            socket.Closed.Should().BeTrue();
         }
     }
 }

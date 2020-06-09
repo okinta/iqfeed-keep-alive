@@ -33,7 +33,7 @@ namespace IqfeedKeepAlive
         public static Task ConnectAsync(
             this ISocket socket, string host, int port, CancellationToken token)
         {
-            return ConnectAsync(socket.ConnectAsync, host, port, token);
+            return ConnectAsync(socket.ConnectAsync, socket.Close, host, port, token);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace IqfeedKeepAlive
         public static Task ConnectAsync(
             this Socket socket, string host, int port, CancellationToken token)
         {
-            return ConnectAsync(socket.ConnectAsync, host, port, token);
+            return ConnectAsync(socket.ConnectAsync, socket.Close, host, port, token);
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace IqfeedKeepAlive
             int millisecondsTimeout, CancellationToken token = default)
         {
             return ConnectAsync(
-                socket.ConnectAsync, host, port, millisecondsTimeout, token);
+                socket.ConnectAsync, socket.Close, host, port, millisecondsTimeout, token);
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace IqfeedKeepAlive
             int millisecondsTimeout, CancellationToken token = default)
         {
             return ConnectAsync(
-                socket.ConnectAsync, host, port, millisecondsTimeout, token);
+                socket.ConnectAsync, socket.Close, host, port, millisecondsTimeout, token);
         }
 
         /// <summary>
@@ -190,21 +190,33 @@ namespace IqfeedKeepAlive
             return await TimeoutAsync(socket.GetMessage, millisecondsTimeout, token);
         }
 
-        private static Task ConnectAsync(
-            this ConnectAsyncDelegate connectAsync, string host, int port,
+        private static async Task ConnectAsync(
+            this ConnectAsyncDelegate connectAsync, Action close, string host, int port,
             CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
-            return connectAsync(host, port).WaitAsync(token);
+            await connectAsync(host, port).WaitAsync(token);
+            if (token.IsCancellationRequested)
+                close();
+
+            token.ThrowIfCancellationRequested();
         }
 
-        private static Task ConnectAsync(
-            this CancellableConnectAsyncDelegate connectAsync, string host, int port,
-            int millisecondsTimeout, CancellationToken token = default)
+        private static async Task ConnectAsync(
+            this CancellableConnectAsyncDelegate connectAsync, Action close, string host,
+            int port, int millisecondsTimeout, CancellationToken token = default)
         {
-            return TimeoutAsync(
-                t => connectAsync(host, port, t),
-                millisecondsTimeout, token);
+            try
+            {
+                await TimeoutAsync(
+                    t => connectAsync(host, port, t),
+                    millisecondsTimeout, token);
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+            {
+                close();
+                throw;
+            }
         }
 
         /// <summary>
