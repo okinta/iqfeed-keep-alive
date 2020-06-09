@@ -16,6 +16,8 @@ namespace IqfeedKeepAlive
     internal static class SocketExtensions
     {
         private delegate Task ConnectAsyncDelegate(string host, int port);
+        private delegate Task CancellableConnectAsyncDelegate(
+            string host, int port, CancellationToken token);
 
         /// <summary>
         /// Establishes a connection to a remote host. The host is specified by a host name
@@ -70,9 +72,8 @@ namespace IqfeedKeepAlive
             this ISocket socket, string host, int port,
             int millisecondsTimeout, CancellationToken token = default)
         {
-            return TimeoutAsync(
-                t => socket.ConnectAsync(host, port, t),
-                millisecondsTimeout, token);
+            return ConnectAsync(
+                socket.ConnectAsync, host, port, millisecondsTimeout, token);
         }
 
         /// <summary>
@@ -94,9 +95,8 @@ namespace IqfeedKeepAlive
             this Socket socket, string host, int port,
             int millisecondsTimeout, CancellationToken token = default)
         {
-            return TimeoutAsync(
-                t => socket.ConnectAsync(host, port, t),
-                millisecondsTimeout, token);
+            return ConnectAsync(
+                socket.ConnectAsync, host, port, millisecondsTimeout, token);
         }
 
         /// <summary>
@@ -196,6 +196,15 @@ namespace IqfeedKeepAlive
         {
             token.ThrowIfCancellationRequested();
             return connectAsync(host, port).WaitAsync(token);
+        }
+
+        private static Task ConnectAsync(
+            this CancellableConnectAsyncDelegate connectAsync, string host, int port,
+            int millisecondsTimeout, CancellationToken token = default)
+        {
+            return TimeoutAsync(
+                t => connectAsync(host, port, t),
+                millisecondsTimeout, token);
         }
 
         /// <summary>
