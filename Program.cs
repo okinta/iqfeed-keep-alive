@@ -38,7 +38,8 @@ namespace IqfeedKeepAlive
         /// <param name="opts">The parsed command line options.</param>
         private async Task Run(Options opts)
         {
-            using var _ = new IqfeedClient(opts.Host, opts.Port);
+            using var _ = new IqfeedClient(
+                opts.Host, opts.Port, opts.PagerTreeIntegrationId);
             await _exitEvent.WaitAsync();
             await ConsoleX.WriteLineAsync("Goodbye");
         }

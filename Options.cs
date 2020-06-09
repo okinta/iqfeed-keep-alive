@@ -12,5 +12,8 @@ namespace IqfeedKeepAlive
 
         [Option('x', "port", Default = 9300)]
         public int Port { get; set; }
+
+        [Option('i', "intid")]
+        public string PagerTreeIntegrationId { get; set; }
     }
 }
