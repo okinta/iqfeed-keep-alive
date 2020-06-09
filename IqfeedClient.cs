@@ -73,7 +73,14 @@ namespace IqfeedKeepAlive
                         throw new SocketException((int)SocketError.NotConnected);
 
                     var _ = await socket.GetMessage(ConnectionTimeout, token);
-                    if (incident != null) await incident.Resolve(token);
+                    if (incident != null)
+                    {
+                        await incident.Resolve(token);
+                        incident = null;
+                        await ConsoleX.WriteLineAsync(
+                            "Resolved PagerTree incident", token);
+                    }
+
                     await ConsoleX.WriteLineAsync("Active", token);
                     while (!token.IsCancellationRequested)
                     {
@@ -88,6 +95,8 @@ namespace IqfeedKeepAlive
                         incident = new Incident(
                             PagerTreeIntId, "IQFeed is down", e.Message);
                         await incident.Notify(token);
+                        await ConsoleX.WriteLineAsync(
+                            "Created PagerTree incident", token);
                     }
 
                     if (socket != null)
