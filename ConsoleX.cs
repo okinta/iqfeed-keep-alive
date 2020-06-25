@@ -6,6 +6,9 @@ using System;
 
 namespace IqfeedKeepAlive
 {
+    /// <summary>
+    /// Describes some useful methods for outputting to the console.
+    /// </summary>
     internal static class ConsoleX
     {
         /// <summary>
